@@ -386,7 +386,7 @@ export function markItem(
       !blank && given.length === expects && given.every((g) => accepted.includes(g));
     const cause: MistakeCause | undefined = correct
       ? undefined
-      : options.authoredCause ?? (blank ? "blank" : undefined);
+      : options.authoredCause ?? item.cause ?? (blank ? "blank" : undefined);
     return { correct, cause, normalised: given, blank, wordLimitExceeded: false };
   }
 
@@ -406,6 +406,10 @@ export function markItem(
     if (blank) return "blank";
     if (accepted.some((a) => differsOnlyByNumber(given, a))) return "number-agreement";
     for (const a of accepted) {
+      // A difference that is only notation ("5,000" vs "5000") is a format
+      // slip, not a misspelling, even though its edit distance is 1. Let the
+      // format rule below claim it.
+      if (differsOnlyByFormat(given, a)) continue;
       const distance = editDistance(given, a, 2);
       // distance 2 on a short word is noise, not a misspelling
       if (distance === 1 && a.length >= 3) return "spelling";
@@ -424,7 +428,7 @@ export function markItem(
 
   return {
     correct: false,
-    cause: options.authoredCause ?? inferred,
+    cause: options.authoredCause ?? item.cause ?? inferred,
     normalised: blank ? [] : [given],
     blank,
     wordLimitExceeded,
@@ -453,7 +457,7 @@ export function markGroup(
     const outcome = markItem(item, response, {
       limit: group.wordLimit,
       groupType: group.type,
-      authoredCause: options.authoredCauses?.[item.n],
+      authoredCause: options.authoredCauses?.[item.n] ?? item.cause,
     });
     return {
       n: item.n,

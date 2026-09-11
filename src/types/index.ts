@@ -94,6 +94,9 @@ export interface Item {
   expects?: number;
   explanation?: string;
   evidence?: Evidence;
+  /** The cause this item traps for, when the author knows it. Always beats the
+   *  cause the marker infers — the person who wrote the distractor knows best. */
+  cause?: MistakeCause;
 }
 
 /** Note/table/form completion renders text with numbered blanks inline.

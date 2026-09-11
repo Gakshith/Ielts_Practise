@@ -292,11 +292,11 @@ export interface DiffInput {
 export function diffAttempts(before: DiffInput, after: DiffInput): AttemptDiff {
   const index = (input: DiffInput): Map<string, { entry: DiffEntry; correct: boolean }> => {
     const map = new Map<string, { entry: DiffEntry; correct: boolean }>();
-    for (const module of input.modules) {
-      for (const item of module.items) {
-        const key = `${module.module}:${item.n}`;
+    for (const result of input.modules) {
+      for (const item of result.items) {
+        const key = `${result.module}:${item.n}`;
         map.set(key, {
-          entry: { key, module: module.module, n: item.n },
+          entry: { key, module: result.module, n: item.n },
           correct: item.correct,
         });
       }

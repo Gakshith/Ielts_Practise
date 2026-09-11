@@ -30,16 +30,16 @@ export function computeLeverage(modules: ModuleBandInput): LeverageHint[] {
   if (overallFrom === undefined) return [];
 
   const hints: LeverageHint[] = [];
-  for (const module of ALL_MODULES) {
-    const from = map[module];
+  for (const moduleId of ALL_MODULES) {
+    const from = map[moduleId];
     if (typeof from !== "number" || !Number.isFinite(from)) continue;
     for (const step of LEVERAGE_STEPS) {
       const to = Math.min(MAX_BAND, from + step);
       if (to <= from) continue; // already at band 9: no rise to model
-      const overallTo = overallBand({ ...map, [module]: to });
+      const overallTo = overallBand({ ...map, [moduleId]: to });
       if (overallTo === undefined) continue;
       hints.push({
-        module,
+        module: moduleId,
         from,
         to,
         overallFrom,

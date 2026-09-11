@@ -103,29 +103,29 @@ function marksWord(n: number): string {
 function buildPriorities(modules: readonly ModuleResult[]): ReportPriority[] {
   const priorities: ReportPriority[] = [];
 
-  for (const module of modules) {
-    const wrong = module.items.filter((i) => !i.correct).length;
-    for (const { cause, count } of summariseCauses(module.items)) {
+  for (const result of modules) {
+    const wrong = result.items.filter((i) => !i.correct).length;
+    for (const { cause, count } of summariseCauses(result.items)) {
       const label = MISTAKE_CAUSE_LABELS[cause];
       const detail =
         cause === "word-limit"
           ? `${count} ${plural(count, "answer was", "answers were")} right in substance but over the stated word limit. In the real test that scores zero, so this threw away ${count} ${marksWord(count)}.`
-          : `${count} of your ${wrong} wrong ${plural(wrong, "answer", "answers")} in ${MODULE_LABELS[module.module].toLowerCase()} came from ${CAUSE_PHRASES[cause]}.`;
+          : `${count} of your ${wrong} wrong ${plural(wrong, "answer", "answers")} in ${MODULE_LABELS[result.module].toLowerCase()} came from ${CAUSE_PHRASES[cause]}.`;
       priorities.push({
-        title: `${label} — ${MODULE_LABELS[module.module]}`,
+        title: `${label} — ${MODULE_LABELS[result.module]}`,
         detail,
-        module: module.module,
+        module: result.module,
         cause,
         marksLost: count,
       });
     }
 
-    const unexplained = unexplainedCount(module.items);
+    const unexplained = unexplainedCount(result.items);
     if (unexplained > 0) {
       priorities.push({
-        title: `No clear pattern — ${MODULE_LABELS[module.module]}`,
-        detail: `${unexplained} wrong ${plural(unexplained, "answer", "answers")} in ${MODULE_LABELS[module.module].toLowerCase()} ${plural(unexplained, "does", "do")} not fit a pattern we can detect. Review ${plural(unexplained, "it", "them")} against the evidence.`,
-        module: module.module,
+        title: `No clear pattern — ${MODULE_LABELS[result.module]}`,
+        detail: `${unexplained} wrong ${plural(unexplained, "answer", "answers")} in ${MODULE_LABELS[result.module].toLowerCase()} ${plural(unexplained, "does", "do")} not fit a pattern we can detect. Review ${plural(unexplained, "it", "them")} against the evidence.`,
+        module: result.module,
         marksLost: unexplained,
       });
     }
@@ -146,25 +146,32 @@ function buildStrengths(modules: readonly ModuleResult[]): string[] {
     );
   }
 
-  for (const module of modules) {
-    if (typeof module.raw !== "number" || typeof module.total !== "number" || module.total === 0) {
+  for (const result of modules) {
+    if (typeof result.raw !== "number" || typeof result.total !== "number" || result.total === 0) {
       continue;
     }
-    const accuracy = module.raw / module.total;
+    const accuracy = result.raw / result.total;
     if (accuracy >= 0.8) {
       strengths.push(
-        `You answered ${module.raw} of ${module.total} correctly in ${MODULE_LABELS[module.module].toLowerCase()}.`,
+        `You answered ${result.raw} of ${result.total} correctly in ${MODULE_LABELS[result.module].toLowerCase()}.`,
       );
     }
-    const blanks = module.items.filter((i) => i.cause === "blank").length;
-    if (blanks === 0 && module.items.length > 0) {
+    const blanks = result.items.filter((i) => i.cause === "blank").length;
+    if (blanks === 0 && result.items.length > 0) {
       strengths.push(
-        `You attempted every question in ${MODULE_LABELS[module.module].toLowerCase()}.`,
+        `You attempted every question in ${MODULE_LABELS[result.module].toLowerCase()}.`,
       );
     }
   }
 
   return strengths.slice(0, 3);
+}
+
+/** "half a band", "a full band", "2.5 bands" — never "0.5 bands". */
+function gapPhrase(gap: number): string {
+  if (gap === 0.5) return "half a band";
+  if (gap === 1) return "a full band";
+  return `${gap} bands`;
 }
 
 function buildHeadline(
@@ -184,7 +191,7 @@ function buildHeadline(
   if (overall !== undefined && profile && Number.isFinite(profile.target)) {
     const gap = Math.round((profile.target - overall) * 2) / 2;
     if (gap > 0) {
-      return `You are ${gap.toFixed(1)} ${plural(gap, "band", "bands")} below your target of ${profile.target.toFixed(1)}.`;
+      return `You are ${gapPhrase(gap)} below your target of ${profile.target.toFixed(1)}.`;
     }
     return `You hit your target: overall band ${overall.toFixed(1)} against a target of ${profile.target.toFixed(1)}.`;
   }
