@@ -12,6 +12,39 @@ import { Card } from "@/components/ui/Card";
 import { ButtonLink } from "@/components/ui/Button";
 import { IconCheck, IconClose } from "@/components/ui/icons";
 import { MODULE_LABEL } from "@/config/exam";
+import type { QuestionType } from "@/types";
+
+const TYPE_LABEL: Record<QuestionType, string> = {
+  "multiple-choice": "Multiple choice",
+  "multiple-select": "Choose more than one",
+  "true-false-notgiven": "True / False / Not Given",
+  "yes-no-notgiven": "Yes / No / Not Given",
+  "matching-headings": "Matching headings",
+  "matching-information": "Matching information",
+  "matching-features": "Matching features",
+  "sentence-endings": "Matching sentence endings",
+  "sentence-completion": "Sentence completion",
+  "summary-completion": "Summary completion",
+  "note-completion": "Note completion",
+  "table-completion": "Table completion",
+  "flowchart-completion": "Flow-chart completion",
+  "diagram-labelling": "Diagram labelling",
+  "map-labelling": "Map labelling",
+  "form-completion": "Form completion",
+  "short-answer": "Short answer",
+};
+
+/* Answer keys are stored normalised (lower-case) so marking can compare them.
+   Letters and the fixed TRUE/FALSE/NOT GIVEN set are read back in the form the
+   candidate actually saw on screen. */
+const SHOUTED = new Set(["true", "false", "not given", "yes", "no"]);
+
+function displayAnswer(value: string): string {
+  const v = value.trim();
+  if (SHOUTED.has(v.toLowerCase())) return v.toUpperCase();
+  if (/^[a-z]$/i.test(v)) return v.toUpperCase();
+  return v;
+}
 
 type Filter = "all" | "wrong";
 
@@ -165,7 +198,7 @@ function ItemList({ module, items }: { module: ModuleResult; items: ItemResult[]
                 {item.cause && !item.correct && (
                   <Badge tone="accent">{CAUSE_LABEL[item.cause]}</Badge>
                 )}
-                <Badge tone="neutral">{item.groupType.replace(/-/g, " ")}</Badge>
+                <Badge tone="neutral">{TYPE_LABEL[item.groupType]}</Badge>
               </div>
 
               <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
@@ -181,7 +214,7 @@ function ItemList({ module, items }: { module: ModuleResult; items: ItemResult[]
                   <dt className="text-xs font-bold uppercase tracking-wide text-text-subtle">
                     Accepted
                   </dt>
-                  <dd className="mt-1 font-bold">{item.accept.join(" / ")}</dd>
+                  <dd className="mt-1 font-bold">{item.accept.map(displayAnswer).join(" / ")}</dd>
                 </div>
               </dl>
 
@@ -219,7 +252,7 @@ function ItemList({ module, items }: { module: ModuleResult; items: ItemResult[]
 
 function formatGiven(v: ItemResult["given"]): string {
   if (v === null || v === undefined) return "";
-  return Array.isArray(v) ? v.join(", ") : v;
+  return Array.isArray(v) ? v.map(displayAnswer).join(", ") : displayAnswer(v);
 }
 
 function formatTime(sec: number): string {

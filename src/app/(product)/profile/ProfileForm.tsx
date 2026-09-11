@@ -7,6 +7,7 @@ import { getProfile, saveProfile, listAttempts, deleteAttempt } from "@/lib/stor
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { MODULE_LABEL } from "@/config/exam";
 
 const BANDS = [5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9];
 
@@ -136,7 +137,7 @@ export function ProfileForm() {
                   <span className="font-bold">
                     {new Date(a.finishedAt ?? a.startedAt).toLocaleDateString()}
                   </span>
-                  <Badge tone="neutral">{a.scope === "full" ? "Full mock" : a.scope}</Badge>
+                  <Badge tone="neutral">{a.scope === "full" ? "Full mock" : MODULE_LABEL[a.scope]}</Badge>
                   <Badge tone={a.mode === "exam" ? "info" : "neutral"}>
                     {a.mode === "exam" ? "Exam" : "Coach"}
                   </Badge>

@@ -12,6 +12,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import { BandBars } from "@/components/results/BandBars";
 import { TrendLine } from "@/components/results/TrendLine";
 import { IconTarget } from "@/components/ui/icons";
+import { MODULE_LABEL } from "@/config/exam";
 
 function daysUntil(iso: string): number | null {
   const t = new Date(`${iso}T00:00:00`).getTime();
@@ -165,7 +166,7 @@ export function Dashboard() {
                     {new Date(result.finishedAt).toLocaleDateString()}
                   </span>
                   <Badge tone="neutral">
-                    {attempt.scope === "full" ? "Full mock" : attempt.scope}
+                    {attempt.scope === "full" ? "Full mock" : MODULE_LABEL[attempt.scope]}
                   </Badge>
                   <Badge tone={attempt.mode === "exam" ? "info" : "neutral"}>
                     {attempt.mode === "exam" ? "Exam" : "Coach"}

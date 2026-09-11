@@ -205,7 +205,7 @@ function buildHeadline(
 
   const single = modules[0];
   if (modules.length === 1) {
-    return `You scored band ${single.band.toFixed(1)} in ${MODULE_LABELS[single.module].toLowerCase()}.`;
+    return `You scored band ${single.band.toFixed(1)} in ${MODULE_LABELS[single.module]}.`;
   }
   return "Nothing in this attempt stands out beyond the scores themselves.";
 }

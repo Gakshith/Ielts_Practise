@@ -125,8 +125,7 @@ export function ResultsView({ attemptId }: { attemptId: string }) {
               <p className="text-sm font-bold uppercase tracking-wide text-text-subtle">
                 Overall band
               </p>
-              <p className="mt-2 font-serif text-5xl font-bold leading-none text-text-subtle">—</p>
-              <p className="mt-4 leading-relaxed text-text-muted">
+              <p className="mt-3 leading-relaxed text-text-muted">
                 {attempt.scope === "full"
                   ? "An overall band is the mean of all four modules. Writing and Speaking have not been marked, so there is nothing honest to average yet."
                   : "A single section does not produce an overall band. Take a full mock for that."}
