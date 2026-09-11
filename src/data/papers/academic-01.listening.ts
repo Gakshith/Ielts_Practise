@@ -216,7 +216,7 @@ const part1: ListeningPart = {
         },
         {
           n: 6,
-          accept: ["24", "24th", "twenty-fourth", "the 24th"],
+          accept: ["24", "24th", "twenty-fourth"],
           explanation:
             "The clearest distractor in the part: the fourteenth is said, corrected to the twenty-fourth, and then the fourteenth is given a different meaning — it is the start date of the job, not the move-in date.",
           evidence: {
@@ -484,7 +484,7 @@ const part2: ListeningPart = {
         {
           n: 16,
           prompt: "Up on the eastern terrace, above the pool: the {{16}}",
-          accept: ["cafe", "café", "new cafe", "new café"],
+          accept: ["cafe", "café"],
           explanation:
             "A correction distractor. Denise first places the café at the far end behind the diving boards, then says that was the old one and it has gone. The new café is on the eastern terrace.",
           evidence: {

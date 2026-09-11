@@ -1,11 +1,9 @@
-export interface LagPoint {
-  n: number;
-  /** seconds into the audio when the answer was spoken */
-  spokenAt: number;
-  /** seconds into the audio when the candidate first typed — null if never answered */
-  answeredAt: number | null;
-  correct: boolean;
-}
+import type { ListeningLagPoint } from "@/lib/analysis";
+
+/* Consumes the engine's ListeningLagPoint directly. The engine omits items it
+   cannot place - no cue, or never typed - rather than guessing a position, so
+   every point drawn here is real. */
+export type LagPoint = ListeningLagPoint;
 
 /* The Listening lag map. The recording runs once, so the question that decides the
    score is not "did you know the word" but "where did you lose the thread, and how
@@ -25,10 +23,7 @@ export function LagMap({ points, durationSec }: { points: LagPoint[]; durationSe
   const H = 150;
 
   const x = (t: number) => padL + Math.max(0, Math.min(1, t / durationSec)) * plotW;
-  const lags = points
-    .filter((p) => p.answeredAt !== null)
-    .map((p) => (p.answeredAt as number) - p.spokenAt);
-  const worst = lags.length ? Math.max(...lags) : 0;
+  const worst = points.length ? Math.max(...points.map((p) => p.lagSec)) : 0;
 
   return (
     <figure className="m-0">
@@ -46,11 +41,11 @@ export function LagMap({ points, durationSec }: { points: LagPoint[]; durationSe
           <line x1={padL} x2={W - padR} y1={yYou} y2={yYou} stroke="var(--border)" strokeWidth={2} />
 
           {points.map((p) => {
-            const ax = x(p.spokenAt);
-            const yx = p.answeredAt === null ? null : x(p.answeredAt);
+            const ax = x(p.spokenAtSec);
+            const yx = x(p.answeredAtSec);
             return (
               <g key={p.n}>
-                {yx !== null && (
+                {(
                   <line
                     x1={ax}
                     y1={yAudio + 7}
@@ -69,22 +64,16 @@ export function LagMap({ points, durationSec }: { points: LagPoint[]; durationSe
                 </text>
 
                 {/* candidate: filled dot when right, hollow ring with a bar when wrong */}
-                {yx !== null ? (
-                  p.correct ? (
-                    <circle cx={yx} cy={yYou} r={5} fill="var(--primary)" stroke="var(--bg-raised)" strokeWidth={2}>
-                      <title>{`Q${p.n} correct — typed ${Math.round((p.answeredAt as number) - p.spokenAt)}s after it was said`}</title>
-                    </circle>
-                  ) : (
-                    <g>
-                      <circle cx={yx} cy={yYou} r={5} fill="var(--bg-raised)" stroke="var(--text)" strokeWidth={2} />
-                      <line x1={yx - 3} y1={yYou} x2={yx + 3} y2={yYou} stroke="var(--text)" strokeWidth={2} />
-                      <title>{`Q${p.n} wrong`}</title>
-                    </g>
-                  )
+                {p.correct ? (
+                  <circle cx={yx} cy={yYou} r={5} fill="var(--primary)" stroke="var(--bg-raised)" strokeWidth={2}>
+                    <title>{`Q${p.n} correct — typed ${Math.round(p.lagSec)}s after it was said`}</title>
+                  </circle>
                 ) : (
-                  <text x={ax} y={yYou + 5} textAnchor="middle" fontSize={13} fontWeight={700} fill="var(--text-muted)">
-                    –
-                  </text>
+                  <g>
+                    <circle cx={yx} cy={yYou} r={5} fill="var(--bg-raised)" stroke="var(--text)" strokeWidth={2} />
+                    <line x1={yx - 3} y1={yYou} x2={yx + 3} y2={yYou} stroke="var(--text)" strokeWidth={2} />
+                    <title>{`Q${p.n} wrong — typed ${Math.round(p.lagSec)}s after it was said`}</title>
+                  </g>
                 )}
               </g>
             );

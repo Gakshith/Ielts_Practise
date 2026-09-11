@@ -276,11 +276,10 @@ const passage1: ReadingPassage = {
             "electrical supplies",
             "electrical supply",
             "the electrical supplies",
-            "four different electrical supplies",
             "electricity supplies",
           ],
           explanation:
-            "The sentence lists three things a cross-border train must satisfy; the question names two of them, so the answer is the third. Copying four different electrical supplies would also be inside the three-word limit only if the number is dropped, so electrical supplies is the safe form.",
+            "The sentence lists three things a cross-border train must satisfy; the question names two of them, so the answer is the third. Copy only the noun phrase: writing four different electrical supplies is four words and breaks the limit, which scores zero even though the content is right.",
           evidence: {
             paragraph: "7",
             quote:
@@ -827,7 +826,7 @@ const passage3: ReadingPassage = {
         {
           n: 39,
           prompt: "Summary blank 39",
-          accept: ["wrong", "shown to be wrong"],
+          accept: ["wrong"],
           explanation:
             "The passage says a prediction that cannot be scored cannot be shown to be wrong. The blank sits after be, so only the single word wrong fits grammatically.",
           evidence: {

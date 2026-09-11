@@ -1,0 +1,6 @@
+import { ResultsView } from "./ResultsView";
+
+export default async function Page({ params }: { params: Promise<{ attemptId: string }> }) {
+  const { attemptId } = await params;
+  return <ResultsView attemptId={attemptId} />;
+}

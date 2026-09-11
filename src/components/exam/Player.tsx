@@ -13,7 +13,7 @@ import type {
   TestPaper,
   TextSize,
 } from "@/types";
-import { countWords, responseKey, violatesWordLimit, normaliseAnswer } from "@/lib/scoring";
+import { responseKey, violatesWordLimit, normaliseAnswer } from "@/lib/scoring";
 import { saveAttempt } from "@/lib/storage";
 import {
   DEFAULT_PART_SEC,
@@ -42,14 +42,14 @@ interface Section {
   items: number[];
 }
 
-function sectionsFor(paper: TestPaper, module: ModuleId): Section[] {
+function sectionsFor(paper: TestPaper, activeModule: ModuleId): Section[] {
   const fromGroups = (label: string, groups: QuestionGroup[]): Section => ({
     label,
     groups,
     items: groups.flatMap((g) => g.items.map((i) => i.n)),
   });
 
-  switch (module) {
+  switch (activeModule) {
     case "listening":
       return paper.listening.parts.map((p) => fromGroups(`Part ${p.index}`, p.groups));
     case "reading":
@@ -69,8 +69,8 @@ function sectionsFor(paper: TestPaper, module: ModuleId): Section[] {
   }
 }
 
-function durationFor(paper: TestPaper, module: ModuleId): number | null {
-  switch (module) {
+function durationFor(paper: TestPaper, activeModule: ModuleId): number | null {
+  switch (activeModule) {
     case "listening": {
       const audio = paper.listening.parts.reduce(
         (sum, p) => sum + (p.durationSec ?? DEFAULT_PART_SEC),
@@ -98,9 +98,9 @@ export function Player({ paper, attempt: initial }: { paper: TestPaper; attempt:
     [attempt.scope],
   );
   const [moduleIdx, setModuleIdx] = useState(0);
-  const module = modules[moduleIdx];
+  const activeModule = modules[moduleIdx];
 
-  const sections = useMemo(() => sectionsFor(paper, module), [paper, module]);
+  const sections = useMemo(() => sectionsFor(paper, activeModule), [paper, activeModule]);
   const [sectionIdx, setSectionIdx] = useState(0);
   const [activeN, setActiveN] = useState(() => sections[0]?.items[0] ?? 1);
 
@@ -110,12 +110,12 @@ export function Player({ paper, attempt: initial }: { paper: TestPaper; attempt:
   const [textSize, setTextSize] = useState<TextSize>("normal");
 
   const [playing, setPlaying] = useState(false);
-  const [gateOpen, setGateOpen] = useState(module === "listening");
+  const [gateOpen, setGateOpen] = useState(activeModule === "listening");
 
   const [moduleStart, setModuleStart] = useState(() => Date.now());
   const [now, setNow] = useState(() => Date.now());
 
-  const duration = durationFor(paper, module);
+  const duration = durationFor(paper, activeModule);
   const remaining =
     duration === null || attempt.mode === "coach"
       ? null
@@ -174,7 +174,7 @@ export function Player({ paper, attempt: initial }: { paper: TestPaper; attempt:
   const setValue = useCallback(
     (n: number, value: ResponseValue) => {
       setAttempt((a) => {
-        const key = responseKey(module, n);
+        const key = responseKey(activeModule, n);
         const prev = a.responses[key];
         const elapsed = Date.now() - moduleStart;
         return {
@@ -192,26 +192,26 @@ export function Player({ paper, attempt: initial }: { paper: TestPaper; attempt:
         };
       });
     },
-    [module, moduleStart],
+    [activeModule, moduleStart],
   );
 
   const verdict = useCallback(
     (n: number): Verdict => {
       if (attempt.mode !== "coach") return undefined;
       const entry = allItems.get(n);
-      const raw = attempt.responses[responseKey(module, n)]?.value;
+      const raw = attempt.responses[responseKey(activeModule, n)]?.value;
       if (!entry || raw === undefined || raw === null || raw === "") return undefined;
       const given = Array.isArray(raw) ? raw.join(" ") : raw;
       return entry.item.accept.some((a) => normaliseAnswer(a) === normaliseAnswer(given))
         ? "correct"
         : "incorrect";
     },
-    [attempt.mode, attempt.responses, allItems, module],
+    [attempt.mode, attempt.responses, allItems, activeModule],
   );
 
   const api: AnswerApi = useMemo(
     () => ({
-      get: (n) => attempt.responses[responseKey(module, n)]?.value ?? null,
+      get: (n) => attempt.responses[responseKey(activeModule, n)]?.value ?? null,
       set: setValue,
       activeN,
       setActive: (n) => {
@@ -219,10 +219,10 @@ export function Player({ paper, attempt: initial }: { paper: TestPaper; attempt:
         const idx = sections.findIndex((s) => s.items.includes(n));
         if (idx >= 0) setSectionIdx(idx);
       },
-      isFlagged: (n) => Boolean(attempt.responses[responseKey(module, n)]?.flagged),
+      isFlagged: (n) => Boolean(attempt.responses[responseKey(activeModule, n)]?.flagged),
       toggleFlag: (n) =>
         setAttempt((a) => {
-          const key = responseKey(module, n);
+          const key = responseKey(activeModule, n);
           const prev = a.responses[key];
           return {
             ...a,
@@ -238,12 +238,12 @@ export function Player({ paper, attempt: initial }: { paper: TestPaper; attempt:
         if (attempt.mode !== "coach") return false;
         const entry = allItems.get(n);
         const limit = entry?.group.wordLimit;
-        const raw = attempt.responses[responseKey(module, n)]?.value;
+        const raw = attempt.responses[responseKey(activeModule, n)]?.value;
         if (!limit || typeof raw !== "string" || raw.trim() === "") return false;
         return violatesWordLimit(raw, limit);
       },
     }),
-    [attempt.responses, attempt.mode, module, activeN, sections, setValue, verdict, allItems],
+    [attempt.responses, attempt.mode, activeModule, activeN, sections, setValue, verdict, allItems],
   );
 
   /* --------------------------------------------------------------- question map */
@@ -253,7 +253,7 @@ export function Player({ paper, attempt: initial }: { paper: TestPaper; attempt:
       sections.map((s) => ({
         label: s.label,
         items: s.items.map((n) => {
-          const r = attempt.responses[responseKey(module, n)];
+          const r = attempt.responses[responseKey(activeModule, n)];
           const v = r?.value;
           return {
             n,
@@ -262,7 +262,7 @@ export function Player({ paper, attempt: initial }: { paper: TestPaper; attempt:
           };
         }),
       })),
-    [sections, attempt.responses, module],
+    [sections, attempt.responses, activeModule],
   );
 
   const answered = mapParts.flatMap((p) => p.items).filter((i) => i.answered).length;
@@ -303,7 +303,7 @@ export function Player({ paper, attempt: initial }: { paper: TestPaper; attempt:
     else finish();
   }, [moduleIdx, modules.length, goToModule, finish]);
 
-  // Time up in exam mode ends the module, exactly as the real test does.
+  // Time up in exam mode ends the activeModule, exactly as the real test does.
   useEffect(() => {
     if (remaining === 0) confirmSubmit();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -332,8 +332,8 @@ export function Player({ paper, attempt: initial }: { paper: TestPaper; attempt:
   const section = sections[sectionIdx];
   const moduleLabel =
     attempt.scope === "full"
-      ? `${MODULE_LABEL[module]} · ${moduleIdx + 1} of ${modules.length}`
-      : MODULE_LABEL[module];
+      ? `${MODULE_LABEL[activeModule]} · ${moduleIdx + 1} of ${modules.length}`
+      : MODULE_LABEL[activeModule];
 
   return (
     <div className="relative flex h-screen flex-col overflow-hidden bg-bg text-text">
@@ -349,7 +349,7 @@ export function Player({ paper, attempt: initial }: { paper: TestPaper; attempt:
 
       <div className="relative flex min-h-0 flex-1">
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-          {module === "listening" && (
+          {activeModule === "listening" && (
             <ListeningView
               part={paper.listening.parts[sectionIdx]}
               api={api}
@@ -360,7 +360,7 @@ export function Player({ paper, attempt: initial }: { paper: TestPaper; attempt:
             />
           )}
 
-          {module === "reading" && (
+          {activeModule === "reading" && (
             <ReadingView
               passage={paper.reading.passages[sectionIdx]}
               api={api}
@@ -377,7 +377,7 @@ export function Player({ paper, attempt: initial }: { paper: TestPaper; attempt:
             />
           )}
 
-          {module === "writing" && (
+          {activeModule === "writing" && (
             <WritingView
               task={paper.writing.tasks[sectionIdx]}
               mode={attempt.mode}
@@ -389,7 +389,7 @@ export function Player({ paper, attempt: initial }: { paper: TestPaper; attempt:
             />
           )}
 
-          {module === "speaking" && (
+          {activeModule === "speaking" && (
             <SpeakingView
               part={paper.speaking.parts[sectionIdx]}
               turns={attempt.speaking?.turns ?? []}
@@ -405,9 +405,9 @@ export function Player({ paper, attempt: initial }: { paper: TestPaper; attempt:
 
         <NotesDrawer
           open={notesOpen}
-          notes={attempt.notes[module] ?? ""}
-          highlights={attempt.highlights.filter((h) => h.module === module)}
-          onNotes={(v) => setAttempt((a) => ({ ...a, notes: { ...a.notes, [module]: v } }))}
+          notes={attempt.notes[activeModule] ?? ""}
+          highlights={attempt.highlights.filter((h) => h.module === activeModule)}
+          onNotes={(v) => setAttempt((a) => ({ ...a, notes: { ...a.notes, [activeModule]: v } }))}
           onClose={() => setNotesOpen(false)}
           onRemoveHighlight={(createdAt) =>
             setAttempt((a) => ({
@@ -417,7 +417,7 @@ export function Player({ paper, attempt: initial }: { paper: TestPaper; attempt:
           }
         />
 
-        {module === "listening" && gateOpen && (
+        {activeModule === "listening" && gateOpen && (
           <AudioGate
             partLabel={`Part ${paper.listening.parts[sectionIdx].index}`}
             context={paper.listening.parts[sectionIdx].context}
@@ -444,7 +444,7 @@ export function Player({ paper, attempt: initial }: { paper: TestPaper; attempt:
 
         {overlay === "submit" && (
           <SubmitScreen
-            moduleLabel={MODULE_LABEL[module]}
+            moduleLabel={MODULE_LABEL[activeModule]}
             answered={answered}
             total={totalItems}
             flagged={flagged}
@@ -456,7 +456,7 @@ export function Player({ paper, attempt: initial }: { paper: TestPaper; attempt:
         )}
       </div>
 
-      {section && section.items.length > 0 && module !== "speaking" && (
+      {section && section.items.length > 0 && activeModule !== "speaking" && (
         <QuestionMap
           parts={mapParts}
           activePart={sectionIdx}
@@ -470,7 +470,7 @@ export function Player({ paper, attempt: initial }: { paper: TestPaper; attempt:
         />
       )}
 
-      {module === "speaking" && (
+      {activeModule === "speaking" && (
         <div className="flex shrink-0 items-center justify-between gap-4 border-t border-border bg-bg-raised px-4 py-3">
           <div className="flex gap-1">
             {sections.map((s, i) => (
