@@ -68,9 +68,16 @@ with a single black `Play` button. Once playing, the header subtitle switches fr
 nothing to `🔊 Audio is Playing`. **There is no scrubber, no pause, no volume slider in
 the player itself.** The audio is a one-way trip.
 
-Crucially, while on Part 1 the footer shows `Part 2  0 of 10`, `Part 3  0 of 10`,
-`Part 4  0 of 10` and those parts are **not reachable** — the gate-per-part model the
-project needs is exactly what the real test does.
+**Question navigation across parts is free — the audio is what is one-way.**
+This was checked rather than assumed. The Part 2/3/4 footer entries render as
+`role="tab"` buttons with `tabindex="0"`, and clicking Part 2 while Part 1 audio was
+playing did navigate (URL moved to `scorableItem/11`). Before pressing Play the audio
+gate is a `role="dialog" aria-modal="true"` overlay that intercepts pointer events, so
+nothing at all is clickable until you start.
+
+So the constraint is not "you cannot look at Part 2". It is "the recording plays once,
+continuously, and will not come back". The candidate may read ahead freely; the audio
+simply does not follow them.
 
 Question format seen: note completion with inline input boxes rendered *in the flow of
 the text* (`Dining table:  -  [ 1 ]  shape`), not a separate answer column. The number
@@ -100,7 +107,9 @@ commonly reported surprise on test day.
 
 ## What this means for our player
 
-1. Listening gating is per-part and hard. Build it as a state machine, not a UI hint.
+1. Listening gating is on the **audio**, not on question navigation. A part's audio may
+   not start until the previous part's audio has finished, and none of it can be paused,
+   scrubbed or replayed. Questions stay freely navigable across all four parts.
 2. The footer question map is the primary navigation. It must carry per-item state.
 3. Highlight + note is one selection-driven feature with a shared drawer.
 4. Three contrast themes are a real exam feature, not an accessibility nicety we invent.

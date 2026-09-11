@@ -193,8 +193,12 @@
   --color-navy-300: var(--navy-300);
   --color-navy-200: var(--navy-200);
   --color-navy-100: var(--navy-100);
+  --color-amber-700: var(--amber-700);
+  --color-amber-600: var(--amber-600);
   --color-amber-500: var(--amber-500);
+  --color-amber-200: var(--amber-200);
   --color-amber-100: var(--amber-100);
+  --color-highlight: var(--highlight);
   --color-bone-50: var(--bone-50);
   --color-bone-100: var(--bone-100);
   --color-bone-200: var(--bone-200);
